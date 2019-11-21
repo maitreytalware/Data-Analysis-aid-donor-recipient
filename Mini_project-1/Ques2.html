@@ -1,0 +1,142 @@
+<!-- Data is Preprocessed in Pandas to help visualize -->
+<!-- Refered to D3 examples and various other open source visulization codes -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+  <h1>VISUALIZATION 2</h1>
+<p>Top 5 most frequent purposes vs Aid the Country Get</p>
+<style type="text/css">
+
+  svg {
+font-family: 'Open Sans Condensed', sans-serif;
+text-align: center;
+font-size: 12px;
+  background: lightBlue;
+  margin-left: 21px;
+  margin-top: 2px;
+  margin-bottom: 30px;
+  margin-right:40px;
+    }
+      h1 { color: #111; font-family: 'Open Sans Condensed', sans-serif; font-size: 64px; font-weight: 700; line-height: 40px; margin: 0 0 0; padding: 20px 20px; text-align: center; text-transform: uppercase; }
+        p { color: #111; font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 20px; margin: 0 0 10px;text-align: center; }
+  text.legendTitle{
+  font-size: 13px;
+  text-align: center;
+  text-decoration: underline;
+}
+</style>
+<!-- Load d3.js -->
+<script src="http://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.13.0/d3-legend.js"></script>
+<body>
+<!-- Create an element where the map will take place -->
+<svg id="my_dataviz" width="1250" height="600" style="border:1px solid black"></svg>
+<script>
+
+var container = d3.select('svg'),
+    width = 1200,
+    height = 600,
+    margin = {top: 70, right: 0, bottom: 0, left: 50};
+
+var svg = container
+   .append("svg")
+   .attr("width", width)
+   .attr("height", height)
+   .append("g")
+   .attr("transform", `translate(${margin.left},${margin.top})`);
+
+// Map and projection
+var path = d3.geoPath();
+var projection = d3.geoMercator()
+  .scale(129)
+  .center([0,20])
+  .translate([width / 2.5, height / 2.5]);
+
+// Data and color scale
+var data = d3.map();
+
+
+// Load external data and boot
+d3.queue()
+  .defer(d3.json, "countries.geo.json")
+  .defer(d3.csv, "data2.csv", function(d) { data.set(d.code, +d.Difference); })
+  .await(ready);
+var extent=[-133980469969,116071813074]
+var spectral = d3.scaleQuantize()
+                .domain([extent[0],extent[1]])
+                .range(['#67001f','#b2182b','#d6604d','#f4a582','#fddbc7','#ffffff','#e0e0e0','#bababa','#878787','#4d4d4d','#1a1a1a']);
+
+
+function ready(error, topo) {
+
+  let mouseOver = function(d) {
+    d3.selectAll(".Country")
+      .transition()
+      .duration(200)
+      .style("opacity", .5)
+    d3.select(this)
+      .transition()
+      .duration(200)
+      .style("opacity", 1)
+      .style("stroke", "black")
+  }
+
+  let mouseLeave = function(d) {
+    d3.selectAll(".Country")
+      .transition()
+      .duration(20)
+      .style("opacity", .8)
+    d3.select(this)
+      .transition()
+      .duration(20)
+      .style("stroke", "transparent")
+  }
+
+  // Draw the map
+  svg.append("g")
+    .selectAll("path")
+    .data(topo.features)
+    .enter()
+    .append("path")
+      // draw each country
+      .attr("d", d3.geoPath()
+        .projection(projection)
+      )
+      // set the color of each country
+      .attr("fill", function (d) {
+        d.total = data.get(d.id) || 0;
+        return spectral(d.total);
+      })
+      .style("stroke", "transparent")
+      .attr("class", function(d){ return "Country" } )
+      .style("opacity", .8)
+      .on("mouseover", mouseOver )
+      .on("mouseleave", mouseLeave )
+    var colorLegend = d3.legendColor()
+        .labelFormat(d3.format(".02f"))
+        .scale(spectral)
+        .shapePadding(0)
+        .shapeWidth(12)
+        .shapeHeight(30)
+        .labelOffset(12)
+        .title("Donated - Recieved in Billion $")
+        .labels(["-133.98 to -111.24",
+                "-111.24 to -88.51",
+                "-88.51 to -65.78",
+                "-65.78 to -43.05",
+                "-43.05 to -20.32",
+                "-20.32 to 2.41",
+                "2.41 to 25.14",
+                "25.14 to 47.87",
+                "47.87 to 70.60",
+                "70.60 to 93.33",
+                "93.33 to 116.07"]);
+      svg.append("g")
+        .attr("transform", "translate(970, 60)")
+
+        .call(colorLegend);
+    }
+
+</script>
+</body>

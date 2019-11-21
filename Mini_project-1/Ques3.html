@@ -1,0 +1,136 @@
+<!-- Data is Preprocessed in Pandas to help visualize -->
+<!-- Refered to D3 examples and various other open source visulization codes -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+<h1>VISUALIZATION 3</h1>
+<p>Top 5 most frequent purposes vs Aid the Country Get</p>
+<style>
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+  }
+
+  .axis text {
+      font-family: sans-serif;
+      font-size: 11px;
+  }
+  h1 { color: #111; font-family: 'Open Sans Condensed', sans-serif; font-size: 64px; font-weight: 700; line-height: 64px; margin: 0 0 0; padding: 20px 30px; text-align: center; text-transform: uppercase; }
+  p { color: #111; font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 28px; margin: 0 0 48px;text-align: center; }
+</style>
+
+<div class="heatmap" style="border:1px solid black"></div>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3-scale.v3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3-legend/1.1.0/d3-legend.js"></script>
+
+<body>
+<script>
+  var itemSize = 30,
+      cellSize = itemSize - 1,
+      margin = {top: 120, right: 90, bottom: 20, left: 250};
+      
+  var width = 1200 - margin.right - margin.left,
+      height = 500 - margin.top - margin.bottom;
+
+  var formatDate = d3.time.format("%Y-%m-%d");
+
+  d3.csv('data3.csv', function ( response ) {
+
+    var data = response.map(function( item ) {
+        var newItem = {};
+        newItem.country = item.coalesced_purpose_name;
+        newItem.product = item.recipient;
+        newItem.value = item.COUNTER;
+
+        return newItem;
+    })
+
+    var x_elements = d3.set(data.map(function( item ) { return item.product; } )).values(),
+        y_elements = d3.set(data.map(function( item ) { return item.country; } )).values();
+
+    var xScale = d3.scale.ordinal()
+        .domain(x_elements)
+        .rangeBands([0, x_elements.length * itemSize]);
+
+    var xAxis = d3.svg.axis()
+        .scale(xScale)
+        .tickFormat(function (d) {
+            return d;
+        })
+        .orient("top");
+
+    var yScale = d3.scale.ordinal()
+        .domain(y_elements)
+        .rangeBands([0, y_elements.length * itemSize]);
+
+    var yAxis = d3.svg.axis()
+        .scale(yScale)
+        .tickFormat(function (d) {
+            return d;
+        })
+        .orient("left");
+
+    var colorScale = d3.scale.quantize()
+        .domain([1, 1551])
+        .range(['#f7fbff','#deebf7','#c6dbef','#9ecae1','#6baed6','#4292c6','#2171b5','#08519c','#08306b']);
+
+    var svg = d3.select('.heatmap')
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var cells = svg.selectAll('rect')
+        .data(data)
+        .enter().append('g').append('rect')
+        .attr('class', 'cell')
+        .attr('width', cellSize)
+        .attr('height', cellSize)
+        .attr('y', function(d) { return yScale(d.country); })
+        .attr('x', function(d) { return xScale(d.product); })
+        .attr('fill', function(d) { return colorScale(d.value); });
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .selectAll('text')
+        .attr('font-weight', 'normal');
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .call(xAxis)
+        .selectAll('text')
+        .attr('font-weight', 'normal')
+        .style("text-anchor", "start")
+        .attr("dx", ".8em")
+        .attr("dy", ".5em")
+        .attr("transform", function (d) {
+            return "rotate(-65)";
+        });
+      var colorLegend = d3.legend.color()
+        .labelFormat(d3.format(".0f"))
+        .scale(colorScale)
+        .shapePadding(5)
+        .shapeWidth(15)
+        .shapeHeight(15)
+        .labelOffset(12);
+      svg.append("g")
+        .attr("transform", "translate(300, 200)")
+        .call(colorLegend);
+    svg.append("text")
+        .attr("x", (width-510))             
+        .attr("y", 180 )
+        .attr("text-anchor", "middle")  
+        .attr("class", "legendTitle")  
+        .style("font-size", "18px") 
+        .style("text-decoration", "underline")
+        .text("Number of Aid");
+
+  });
+</script>
+</body>

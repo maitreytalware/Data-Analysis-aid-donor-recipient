@@ -1,0 +1,149 @@
+<!-- Data is Preprocessed in Pandas to help visualize -->
+<!-- Refered to D3 examples and various other open source visulization codes -->
+<meta charset="utf-8">
+  <h1>VISUALIZATION 1</h1>
+<p>How do the countries compare in terms of how much they receive and donate from other countries</p>
+<style> /* set the CSS */
+body { font: 12px Arial;}
+      h1 { color: #111; font-family: 'Open Sans Condensed', sans-serif; font-size: 64px; font-weight: 700; line-height: 40px; margin: 0 0 0; padding: 20px 20px; text-align: center; text-transform: uppercase; }
+        p { color: #111; font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 20px; margin: 0 0 10px;text-align: center; }
+path { 
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+.legend {
+    font-size: 16px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+</style>
+<body>
+<div id="d3id" ></div>
+<!-- load the d3.js library -->    
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script>
+
+var container = d3.select('#d3id'),
+    width = 1300,
+    height = 650,
+    margin = {top: 20, right: 40, bottom: 90, left: 100},
+    barPadding = .2,
+    axisTicks = {qty: 5, outerSize: 0, dateFormat: '%m-%d'};
+
+var svg = container
+   .append("svg")
+   .attr("width", width)
+   .attr("height", height)
+   .append("g")
+   .attr("transform", `translate(${margin.left},${margin.top})`);
+
+var xScale0 = d3.scaleBand().range([0, width - margin.left - margin.right]).padding(barPadding);
+var xScale1 = d3.scaleBand();
+var yScale = d3.scaleLinear().range([height - margin.top - margin.bottom, 0]);
+var z = d3.scaleOrdinal()
+    .range(["#37A3D6", "#FF9400"]);
+
+var xAxis = d3.axisBottom(xScale0).tickSizeOuter(axisTicks.outerSize);
+var yAxis = d3.axisLeft(yScale).ticks(axisTicks.qty).tickSizeOuter(axisTicks.outerSize);
+
+d3.csv("data.csv", function(d, i, columns) {
+  for (var i = 1, n = columns.length; i < n; ++i) d[columns[i]] = +d[columns[i]];
+      return d;
+    console.log(columns);
+}, function(error, data) {
+  if (error) throw error;
+
+  var keys = data.columns.slice(1);
+  xScale0.domain(data.map(function(d){ return d.country;}));
+  xScale1.domain(['Donated_amount', 'Recieved_amount']).range([0, xScale0.bandwidth()]);
+  yScale.domain([0, d3.max(data, d => d.Donated_amount > d.Recieved_amount ? d.Donated_amount : d.Recieved_amount)]);
+
+  var country = svg.selectAll(".country")
+    .data(data)
+    .enter().append("g")
+    .attr("class", "country")
+    .attr("transform", d => `translate(${xScale0(d.country)},0)`);
+
+  /* Add Donated_amount bars */
+  country.selectAll(".bar.Donated_amount")
+    .data(d => [d])
+    .enter()
+    .append("rect")
+    .attr("class", "bar Donated_amount")
+    .style("fill","#37A3D6")
+    .attr("x", d => xScale1('Donated_amount'))
+    .attr("y", d => yScale(d.Donated_amount))
+    .attr("width", xScale1.bandwidth())
+    .attr("height", d => {
+      return height - margin.top - margin.bottom - yScale(d.Donated_amount)
+    });
+    
+  /* Add Recieved_amount bars */
+  country.selectAll(".bar.Recieved_amount")
+    .data(d => [d])
+    .enter()
+    .append("rect")
+    .attr("class", "bar Recieved_amount")
+    .style("fill","#FF9400")
+    .attr("x", d => xScale1('Recieved_amount'))
+    .attr("y", d => yScale(d.Recieved_amount))
+    .attr("width", xScale1.bandwidth())
+    .attr("height", d => {
+      return height - margin.top - margin.bottom - yScale(d.Recieved_amount)
+    });
+   
+  // Add the X Axis
+  svg.append("g")
+     .attr("class", "x axis")
+     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
+     .call(xAxis)
+     .selectAll("text") 
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(-65)")
+      .text(function (d) {
+        if(d.length > 14) { return d.substring(0,14)+'...'; } 
+        else { return d; }
+      });
+
+  // Add the Y Axis
+  svg.append("g")
+     .attr("class", "y axis")
+     .call(yAxis); 
+
+  var legend = svg.append("g")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 10)
+      .attr("text-anchor", "end")
+      .selectAll("g")
+      .data(keys.slice())
+      .enter()
+      .append("g")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+  legend.append("rect")
+      .attr("x", width - 350)
+      .attr("width", 19)
+      .attr("height", 19)
+      .attr("fill", z);
+
+  legend.append("text")
+      .attr("x", width - 230)
+      .attr("y", 9.5)
+      .attr("dy", "0.32em")
+      .text(function(d) { return d; });
+
+
+});
+</script>
+</body>
