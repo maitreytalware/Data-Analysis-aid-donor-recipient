@@ -1,0 +1,147 @@
+<!-- Data is Preprocessed in Pandas to help visualize -->
+<!-- Refered to D3 examples and various other open source visulization codes -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+<h1>VISUALIZATION 1</h1>
+<p>How does the amount donated vs. amount received change over time across all countries</p>
+<style>
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+  }
+
+  .axis text {
+      font-family: sans-serif;
+      font-size: 11px;
+  }
+  h1 { color: #111; font-family: 'Open Sans Condensed', sans-serif; font-size: 64px; font-weight: 700; line-height: 64px; margin: 0 0 0; padding: 20px 30px; text-align: center; text-transform: uppercase; }
+  p { color: #111; font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 10px; margin: 0 0 10px;text-align: center; }
+</style>
+
+<div class="heatmap" style="border:1px solid black"></div>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3-scale.v3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3-legend/1.1.0/d3-legend.js"></script>
+
+<body>
+<script>
+  var itemSize = 22,
+      cellSize = itemSize - 1,
+      margin = {top: 100, right: 90, bottom: 20, left: 200};
+      
+  var width = 1500 - margin.right - margin.left,
+      height = 1200 - margin.top - margin.bottom;
+
+  var formatDate = d3.time.format("%Y-%m-%d");
+
+  d3.csv('new_sorted.csv', function ( response ) {
+
+    var data = response.map(function( item ) {
+        var newItem = {};
+        newItem.country = item.country;
+        newItem.product = item.year;
+        newItem.value = item.don_rec;
+
+        return newItem;
+    })
+
+    var x_elements = d3.set(data.map(function( item ) { return item.product; } )).values(),
+        y_elements = d3.set(data.map(function( item ) { return item.country; } )).values();
+
+    var xScale = d3.scale.ordinal()
+        .domain(x_elements)
+        .rangeBands([0, x_elements.length * itemSize]);
+
+    var xAxis = d3.svg.axis()
+        .scale(xScale)
+        .tickFormat(function (d) {
+            return d;
+        })
+        .orient("top");
+
+    var yScale = d3.scale.ordinal()
+        .domain(y_elements)
+        .rangeBands([0, y_elements.length * itemSize]);
+
+    var yAxis = d3.svg.axis()
+        .scale(yScale)
+        .tickFormat(function (d) {
+            return d;
+        })
+        .orient("left");
+
+    var colorScale = d3.scale.threshold()
+        .domain([-10000000000,-1000000000,-100000000,-10000000,-1000000,1000000,10000000,100000000,1000000000,10000000000,100000000000])
+        .range(['#93003a',
+ '#c52a52',
+ '#e75d6f',
+ '#fd9291',
+ '#ffcab9',
+ '#ffffe0',
+ '#b1dfdb',
+ '#85b7ce',
+ '#618fbf',
+ '#3e67ae',
+ '#00429d']);
+
+    var svg = d3.select('.heatmap')
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var cells = svg.selectAll('rect')
+        .data(data)
+        .enter().append('g').append('rect')
+        .attr('class', 'cell')
+        .attr('width', cellSize)
+        .attr('height', cellSize)
+        .attr('y', function(d) { return yScale(d.country); })
+        .attr('x', function(d) { return xScale(d.product); })
+        .attr('fill', function(d) { return colorScale(d.value); });
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .selectAll('text')
+        .attr('font-weight', 'normal');
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .call(xAxis)
+        .selectAll('text')
+        .attr('font-weight', 'normal')
+        .style("text-anchor", "start")
+        .attr("dx", ".8em")
+        .attr("dy", ".5em")
+        .attr("transform", function (d) {
+            return "rotate(-65)";
+        });
+      var colorLegend = d3.legend.color()
+        .labelFormat(d3.format(".0f"))
+        .scale(colorScale)
+        .labels([-10000000000,-1000000000,-100000000,-10000000,-1000000,1000000,10000000,100000000,1000000000,10000000000,100000000000])
+        .shapePadding(0)
+        .shapeWidth(15)
+        .shapeHeight(35)
+        .labelOffset(12);
+      svg.append("g")
+        .attr("transform", "translate(1000, 200)")
+        .call(colorLegend);
+    svg.append("text")
+        .attr("x", (width-150))             
+        .attr("y", 180 )
+        .attr("text-anchor", "middle")  
+        .attr("class", "legendTitle")  
+        .style("font-size", "18px") 
+        .style("text-decoration", "underline")
+        .text("Donated - Recieved");
+
+  });
+</script>
+</body>
